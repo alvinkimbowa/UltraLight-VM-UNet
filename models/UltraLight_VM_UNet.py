@@ -6,6 +6,7 @@ from timm.models.layers import trunc_normal_
 import math
 from mamba_ssm import Mamba
 
+from .phase_asymmono import PhaseAsymmono2D
 
 class PVMLayer(nn.Module):
     def __init__(self, input_dim, output_dim, d_state = 16, d_conv = 4, expand = 2):
@@ -190,6 +191,8 @@ class UltraLight_VM_UNet(nn.Module):
 
         self.apply(self._init_weights)
 
+        self.mono = PhaseAsymmono2D()
+
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
             trunc_normal_(m.weight, std=.02)
@@ -206,7 +209,8 @@ class UltraLight_VM_UNet(nn.Module):
                 m.bias.data.zero_()
 
     def forward(self, x):
-        
+        x = self.mono(x)
+
         out = F.gelu(F.max_pool2d(self.ebn1(self.encoder1(x)),2,2))
         t1 = out # b, c0, H/2, W/2
 
