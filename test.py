@@ -16,20 +16,44 @@ from configs.config_setting import setting_config
 import warnings
 warnings.filterwarnings("ignore")
 
+import json
+import argparse
+from glob import glob
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-f', '--fold', type=int, default=0,
+                        help='fold to use for training')
+    parser.add_argument('--work_dir', type=str, default='results',
+                        help='working directory')
+    parser.add_argument('--data_path', type=str, required=True,
+                        help='Path to dataset')
+    parser.add_argument('--dataset', type=str, default="knee_cartilage_us",
+                        help='dataset - will be used to name the results folder')
+    parser.add_argument('--test_dataset', type=str, required=True,
+                        help='dataset on which to make predictions')
+    
+    return parser.parse_args()
 
 def main(config):
+    args = vars(parse_args())
+    print(args)
+    fold = args['fold']
+    config.test_dataset = args['test_dataset']
+    config.work_dir = os.path.join(args['work_dir'], args['dataset'], f"fold_{fold}")
+    config.data_path = os.path.join(args['data_path'], config.test_dataset)
 
     print('#----------Creating logger----------#')
     sys.path.append(config.work_dir + '/')
     log_dir = os.path.join(config.work_dir, 'log')
     checkpoint_dir = os.path.join(config.work_dir, 'checkpoints')
-    resume_model = os.path.join('')
-    outputs = os.path.join(config.work_dir, 'outputs')
+    resume_model = os.path.join(checkpoint_dir, 'best.pth')
+    # outputs = os.path.join(config.work_dir, 'predictions')
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
-    if not os.path.exists(outputs):
-        os.makedirs(outputs)
+    # if not os.path.exists(outputs):
+    #     os.makedirs(outputs)
 
     global logger
     logger = get_logger('test', log_dir)
@@ -59,7 +83,13 @@ def main(config):
 
 
     print('#----------Preparing dataset----------#')
-    test_dataset = isic_loader(path_Data = config.data_path, train = False, Test = True)
+    test_img_ids = os.listdir(os.path.join(config.data_path, 'imagesTr'))
+    test_img_ids = [img.rsplit('_', 1)[0] for img in test_img_ids]
+    config.test_img_ids = test_img_ids
+    test_dataset = isic_loader(img_ids=test_img_ids,
+        img_dir=os.path.join(config.data_path, 'imagesTr'),
+        mask_dir=os.path.join(config.data_path, 'labelsTr'), train=False)
+    # test_dataset = isic_loader(path_Data = config.data_path, train = False, Test = True)
     test_loader = DataLoader(test_dataset,
                                 batch_size=1,
                                 shuffle=False,

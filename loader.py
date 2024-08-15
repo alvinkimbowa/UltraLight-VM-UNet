@@ -11,6 +11,7 @@ from torchvision import transforms
 from scipy import ndimage
 from utils import *
 
+import cv2
 
 # ===== normalize over the dataset 
 def dataset_normalized(imgs):
@@ -23,36 +24,54 @@ def dataset_normalized(imgs):
     return imgs_normalized
 
 
+def normalize_img(img):
+    return (img - img.min()) / (img.max() - img.min())
+
 ## Temporary
 class isic_loader(Dataset):
     """ dataset class for Brats datasets
     """
-    def __init__(self, path_Data, train = True, Test = False):
+    def __init__(self, img_ids, img_dir, mask_dir, train = True, Test = False):
         super(isic_loader, self)
+        self.img_ids = img_ids
+        self.img_dir = img_dir
+        self.mask_dir = mask_dir
         self.train = train
-        if train:
-          self.data   = np.load(path_Data+'data_train.npy')
-          self.mask   = np.load(path_Data+'mask_train.npy')
-        else:
-          if Test:
-            self.data   = np.load(path_Data+'data_test.npy')
-            self.mask   = np.load(path_Data+'mask_test.npy')
-          else:
-            self.data   = np.load(path_Data+'data_val.npy')
-            self.mask   = np.load(path_Data+'mask_val.npy')          
+        self.img_size = (512, 512)
+        # if train:
+        #   self.data   = np.load(path_Data+'data_train.npy')
+        #   self.mask   = np.load(path_Data+'mask_train.npy')
+        # else:
+        #   if Test:
+        #     self.data   = np.load(path_Data+'data_test.npy')
+        #     self.mask   = np.load(path_Data+'mask_test.npy')
+        #   else:
+        #     self.data   = np.load(path_Data+'data_val.npy')
+        #     self.mask   = np.load(path_Data+'mask_val.npy')          
         
-        self.data   = dataset_normalized(self.data)
-        self.mask   = np.expand_dims(self.mask, axis=3)
-        self.mask   = self.mask/255.
+        # self.data   = dataset_normalized(self.data)
+        # self.mask   = np.expand_dims(self.mask, axis=3)
+        # self.mask   = self.mask/255.
 
     def __getitem__(self, indx):
-        img = self.data[indx]
-        seg = self.mask[indx]
-        if self.train:
-            if random.random() > 0.5:
-                img, seg = self.random_rot_flip(img, seg)
-            if random.random() > 0.5:
-                img, seg = self.random_rotate(img, seg)
+        img_id = self.img_ids[indx]
+        # print("img_id: ", os.path.join(self.img_dir, f"{img_id}.png"))
+        img = cv2.imread(os.path.join(self.img_dir, f"{img_id}_0000.png"), cv2.IMREAD_GRAYSCALE)
+        img = cv2.resize(img, self.img_size)[..., None]
+        # print("img: ", img.shape)
+        img = normalize_img(img)
+
+        # print("seg: ", os.path.join(self.mask_dir, f"{img_id}.png"))
+        seg = cv2.imread(os.path.join(self.mask_dir, f"{img_id}.png"), cv2.IMREAD_GRAYSCALE)
+        seg = cv2.resize(seg, self.img_size)[..., None]
+
+        # img = self.data[indx]
+        # seg = self.mask[indx]
+        # if self.train:
+        #     if random.random() > 0.5:
+        #         img, seg = self.random_rot_flip(img, seg)
+        #     if random.random() > 0.5:
+        #         img, seg = self.random_rotate(img, seg)
         
         seg = torch.tensor(seg.copy())
         img = torch.tensor(img.copy())
@@ -79,5 +98,5 @@ class isic_loader(Dataset):
 
                
     def __len__(self):
-        return len(self.data)
+        return len(self.img_ids)
     
