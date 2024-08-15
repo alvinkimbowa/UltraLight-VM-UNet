@@ -8,7 +8,7 @@ from models.UltraLight_VM_UNet import UltraLight_VM_UNet
 from engine import *
 import os
 import sys
-os.environ["CUDA_VISIBLE_DEVICES"] = "0" # "0, 1, 2, 3"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0" # "0, 1, 2, 3"
 
 from utils import *
 from configs.config_setting import setting_config
@@ -16,8 +16,31 @@ from configs.config_setting import setting_config
 import warnings
 warnings.filterwarnings("ignore")
 
+import json
+import argparse
+from glob import glob
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-f', '--fold', type=int, default=0,
+                        help='fold to use for training')
+    parser.add_argument('--work_dir', type=str, default='results',
+                        help='working directory')
+    parser.add_argument('--data_path', type=str, required=True,
+                        help='Path to dataset')
+    parser.add_argument('--dataset', type=str, required=True,
+                        help='dataset - will be used to name the results folder')
+    
+    return parser.parse_args()
 
 def main(config):
+    args = vars(parse_args())
+    print(args)
+    fold = args['fold']
+    dataset = args['dataset']
+    config.work_dir = os.path.join(args['work_dir'], dataset, f"fold_{fold}")
+    config.data_path = os.path.join(args['data_path'], dataset)
 
     print('#----------Creating logger----------#')
     sys.path.append(config.work_dir + '/')
@@ -99,7 +122,7 @@ def main(config):
                                split_att=model_cfg['split_att'], 
                                bridge=model_cfg['bridge'],)
     
-    model = torch.nn.DataParallel(model.cuda(), device_ids=gpu_ids, output_device=gpu_ids[0])
+    # model = torch.nn.DataParallel(model.cuda(), device_ids=gpu_ids, output_device=gpu_ids[0])
 
 
 
@@ -185,21 +208,21 @@ def main(config):
                 'scheduler_state_dict': scheduler.state_dict(),
             }, os.path.join(checkpoint_dir, 'latest.pth')) 
 
-    if os.path.exists(os.path.join(checkpoint_dir, 'best.pth')):
-        print('#----------Testing----------#')
-        best_weight = torch.load(config.work_dir + 'checkpoints/best.pth', map_location=torch.device('cpu'))
-        model.module.load_state_dict(best_weight)
-        loss = test_one_epoch(
-                test_loader,
-                model,
-                criterion,
-                logger,
-                config,
-            )
-        os.rename(
-            os.path.join(checkpoint_dir, 'best.pth'),
-            os.path.join(checkpoint_dir, f'best-epoch{min_epoch}-loss{min_loss:.4f}.pth')
-        )      
+    # if os.path.exists(os.path.join(checkpoint_dir, 'best.pth')):
+    #     print('#----------Testing----------#')
+    #     best_weight = torch.load(config.work_dir + 'checkpoints/best.pth', map_location=torch.device('cpu'))
+    #     model.module.load_state_dict(best_weight)
+    #     loss = test_one_epoch(
+    #             test_loader,
+    #             model,
+    #             criterion,
+    #             logger,
+    #             config,
+    #         )
+    #     os.rename(
+    #         os.path.join(checkpoint_dir, 'best.pth'),
+    #         os.path.join(checkpoint_dir, f'best-epoch{min_epoch}-loss{min_loss:.4f}.pth')
+    #     )      
 
 
 if __name__ == '__main__':

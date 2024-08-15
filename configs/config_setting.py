@@ -10,7 +10,7 @@ class setting_config:
     network = 'UltraLight_VM_UNet' 
     model_config = {
         'num_classes': 1,
-        'input_channels': 3,
+        'input_channels': 1,
         'c_list': [8,16,24,32,48,64],
         'split_att': 'fc',
         'bridge': True,
@@ -18,22 +18,25 @@ class setting_config:
 
     test_weights = ''
 
-    datasets = 'ISIC2017'
-    if datasets == 'ISIC2017':
-        data_path = ''
-    elif datasets == 'ISIC2018':
-        data_path = ''
-    elif datasets == 'PH2':
-        data_path = ''
-    else:
-        raise Exception('datasets in not right!')
+    # datasets = 'ISIC2017'
+    # if datasets == 'ISIC2017':
+    #     data_path = ''
+    # elif datasets == 'ISIC2018':
+    #     data_path = ''
+    # elif datasets == 'PH2':
+    #     data_path = ''
+    # else:
+    #     raise Exception('datasets in not right!')
+    
+    # datasets = "knee_cartilage_us"
+    # data_path = "/home/alvin/UltrAi/ai-pocus/state_of_the_art_models/nnunet/knee_cartilage/phase_info_experiments/nnUNet_raw/Dataset070_Clarius_L15/"
 
     criterion = BceDiceLoss()
 
     num_classes = 1
-    input_size_h = 256
-    input_size_w = 256
-    input_channels = 3
+    input_size_h = 512
+    input_size_w = 512
+    input_channels = 1
     distributed = False
     local_rank = -1
     num_workers = 0
@@ -41,10 +44,10 @@ class setting_config:
     world_size = None
     rank = None
     amp = False
-    batch_size = 8
+    batch_size = 1
     epochs = 250
 
-    work_dir = 'results/' + network + '_' + datasets + '_' + datetime.now().strftime('%A_%d_%B_%Y_%Hh_%Mm_%Ss') + '/'
+    # work_dir = 'results/' + network + '_' + datasets + '_' + datetime.now().strftime('%A_%d_%B_%Y_%Hh_%Mm_%Ss') + '/'
 
     print_interval = 20
     val_interval = 30

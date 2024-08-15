@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from tqdm import tqdm
 import torch
@@ -115,6 +116,9 @@ def test_one_epoch(test_loader,
     gts = []
     loss_list = []
     with torch.no_grad():
+        save_dir = os.path.join(config.work_dir, 'predictions', config.test_dataset)
+        os.makedirs(save_dir, exist_ok=True)
+        print("save_dir: ", save_dir)
         for i, data in enumerate(tqdm(test_loader)):
             img, msk = data
             img, msk = img.cuda(non_blocking=True).float(), msk.cuda(non_blocking=True).float()
@@ -126,31 +130,33 @@ def test_one_epoch(test_loader,
             if type(out) is tuple:
                 out = out[0]
             out = out.squeeze(1).cpu().detach().numpy()
-            preds.append(out) 
-            save_imgs(img, msk, out, i, config.work_dir + 'outputs/', config.datasets, config.threshold, test_data_name=test_data_name)
+            preds.append(out)
+            save_path = os.path.join(save_dir, config.test_img_ids[i] + '.png')
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            save_imgs(img, msk, out, i, save_path=save_path, threshold=config.threshold, test_data_name=test_data_name)
 
-        preds = np.array(preds).reshape(-1)
-        gts = np.array(gts).reshape(-1)
+        # preds = np.array(preds).reshape(-1)
+        # gts = np.array(gts).reshape(-1)
 
-        y_pre = np.where(preds>=config.threshold, 1, 0)
-        y_true = np.where(gts>=0.5, 1, 0)
+        # y_pre = np.where(preds>=config.threshold, 1, 0)
+        # y_true = np.where(gts>=0.5, 1, 0)
 
-        confusion = confusion_matrix(y_true, y_pre)
-        TN, FP, FN, TP = confusion[0,0], confusion[0,1], confusion[1,0], confusion[1,1] 
+        # confusion = confusion_matrix(y_true, y_pre)
+        # TN, FP, FN, TP = confusion[0,0], confusion[0,1], confusion[1,0], confusion[1,1] 
 
-        accuracy = float(TN + TP) / float(np.sum(confusion)) if float(np.sum(confusion)) != 0 else 0
-        sensitivity = float(TP) / float(TP + FN) if float(TP + FN) != 0 else 0
-        specificity = float(TN) / float(TN + FP) if float(TN + FP) != 0 else 0
-        f1_or_dsc = float(2 * TP) / float(2 * TP + FP + FN) if float(2 * TP + FP + FN) != 0 else 0
-        miou = float(TP) / float(TP + FP + FN) if float(TP + FP + FN) != 0 else 0
+        # accuracy = float(TN + TP) / float(np.sum(confusion)) if float(np.sum(confusion)) != 0 else 0
+        # sensitivity = float(TP) / float(TP + FN) if float(TP + FN) != 0 else 0
+        # specificity = float(TN) / float(TN + FP) if float(TN + FP) != 0 else 0
+        # f1_or_dsc = float(2 * TP) / float(2 * TP + FP + FN) if float(2 * TP + FP + FN) != 0 else 0
+        # miou = float(TP) / float(TP + FP + FN) if float(TP + FP + FN) != 0 else 0
 
-        if test_data_name is not None:
-            log_info = f'test_datasets_name: {test_data_name}'
-            print(log_info)
-            logger.info(log_info)
-        log_info = f'test of best model, loss: {np.mean(loss_list):.4f},miou: {miou}, f1_or_dsc: {f1_or_dsc}, accuracy: {accuracy}, \
-                specificity: {specificity}, sensitivity: {sensitivity}, confusion_matrix: {confusion}'
-        print(log_info)
-        logger.info(log_info)
+        # if test_data_name is not None:
+        #     log_info = f'test_datasets_name: {test_data_name}'
+        #     print(log_info)
+        #     logger.info(log_info)
+        # log_info = f'test of best model, loss: {np.mean(loss_list):.4f},miou: {miou}, f1_or_dsc: {f1_or_dsc}, accuracy: {accuracy}, \
+        #         specificity: {specificity}, sensitivity: {sensitivity}, confusion_matrix: {confusion}'
+        # print(log_info)
+        # logger.info(log_info)
 
     return np.mean(loss_list)

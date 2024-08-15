@@ -11,6 +11,7 @@ import logging
 import logging.handlers
 from matplotlib import pyplot as plt
 
+import cv2
 
 def set_seed(seed):
     # for hash
@@ -222,7 +223,7 @@ def get_scheduler(config, optimizer):
 
 
 
-def save_imgs(img, msk, msk_pred, i, save_path, datasets, threshold=0.5, test_data_name=None):
+def save_imgs(img, msk, msk_pred, i, save_path, datasets=None, threshold=0.5, test_data_name=None):
     img = img.squeeze(0).permute(1,2,0).detach().cpu().numpy()
     img = img / 255. if img.max() > 1.1 else img
     if datasets == 'retinal':
@@ -232,24 +233,25 @@ def save_imgs(img, msk, msk_pred, i, save_path, datasets, threshold=0.5, test_da
         msk = np.where(np.squeeze(msk, axis=0) > 0.5, 1, 0)
         msk_pred = np.where(np.squeeze(msk_pred, axis=0) > threshold, 1, 0) 
 
-    plt.figure(figsize=(7,15))
+    cv2.imwrite(save_path, msk_pred)
+    # plt.figure(figsize=(15,7))
 
-    plt.subplot(3,1,1)
-    plt.imshow(img)
-    plt.axis('off')
+    # plt.subplot(1,3,1)
+    # plt.imshow(img)
+    # plt.axis('off')
 
-    plt.subplot(3,1,2)
-    plt.imshow(msk, cmap= 'gray')
-    plt.axis('off')
+    # plt.subplot(1,3,2)
+    # plt.imshow(msk, cmap= 'gray')
+    # plt.axis('off')
 
-    plt.subplot(3,1,3)
-    plt.imshow(msk_pred, cmap = 'gray')
-    plt.axis('off')
+    # plt.subplot(1,3,3)
+    # plt.imshow(msk_pred, cmap = 'gray')
+    # plt.axis('off')
 
-    if test_data_name is not None:
-        save_path = save_path + test_data_name + '_'
-    plt.savefig(save_path + str(i) +'.png')
-    plt.close()
+    # if test_data_name is not None:
+    #     save_path = save_path + test_data_name + '_'
+    # plt.savefig(os.path.join(save_path, str(i) +'.png'))
+    # plt.close()
     
 
 
